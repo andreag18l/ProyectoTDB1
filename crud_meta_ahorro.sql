@@ -1,0 +1,203 @@
+-- CRU META_AHORRO
+-- INSERT
+SET TERM !! ;
+
+CREATE PROCEDURE SP_META_INSERT (
+    P_ID_USUARIO INTEGER,
+    P_ID_SUBCATEGORIA INTEGER,
+    P_NOMBRE VARCHAR(150),
+    P_DESCRIPCION VARCHAR(200),
+    P_MONTO_OBJ NUMERIC(10,2),
+    P_MONTO_ACUM NUMERIC(10,2),
+    P_FECHA_INICIO DATE,
+    P_FECHA_OBJ DATE,
+    P_PRIORIDAD VARCHAR(20),
+    P_ESTADO VARCHAR(20),
+    P_CREADO_POR VARCHAR(100)
+)
+RETURNS (
+    ID_GENERADO INTEGER
+)
+AS
+DECLARE VARIABLE V_ID INTEGER;
+BEGIN
+    /* Generar ID automático */
+    V_ID = GEN_ID(SEQ_META, 1);
+
+    INSERT INTO META_AHORRO (
+        ID_META,
+        ID_USUARIO,
+        ID_SUBCATEGORIA,
+        NOMBRE_META,
+        DESCRIPCION,
+        MONTO_OBJETIVO,
+        MONTO_ACUMULADO,
+        FECHA_INICIO,
+        FECHA_OBJETIVO,
+        PRIORIDAD,
+        ESTADO,
+        CREADO_POR,
+        MODIFICADO_POR,
+        CREADO_EN,
+        MODIFICADO_EN
+    )
+    VALUES (
+        :V_ID,
+        :P_ID_USUARIO,
+        :P_ID_SUBCATEGORIA,
+        :P_NOMBRE,
+        :P_DESCRIPCION,
+        :P_MONTO_OBJ,
+        :P_MONTO_ACUM,
+        :P_FECHA_INICIO,
+        :P_FECHA_OBJ,
+        :P_PRIORIDAD,
+        :P_ESTADO,
+        :P_CREADO_POR,
+        :P_CREADO_POR,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    );
+
+    ID_GENERADO = :V_ID;
+    SUSPEND;
+END!!
+
+SET TERM ; !!
+
+
+--LIST 
+SET TERM !! ;
+
+CREATE PROCEDURE SP_META_LIST (
+    P_ID_USUARIO INTEGER
+)
+RETURNS (
+    ID_META INTEGER,
+    SUBCAT INTEGER,
+    NOMBRE VARCHAR(150),
+    OBJETIVO NUMERIC(10,2),
+    ACUM NUMERIC(10,2),
+    PRIOR VARCHAR(20),
+    EST VARCHAR(20),
+    INICIO DATE
+)
+AS
+BEGIN
+    FOR
+        SELECT
+            ID_META,
+            ID_SUBCATEGORIA,
+            NOMBRE_META,
+            MONTO_OBJETIVO,
+            MONTO_ACUMULADO,
+            PRIORIDAD,
+            ESTADO,
+            FECHA_INICIO
+        FROM META_AHORRO
+        WHERE ID_USUARIO = :P_ID_USUARIO
+        INTO
+            :ID_META,
+            :SUBCAT,
+            :NOMBRE,
+            :OBJETIVO,
+            :ACUM,
+            :PRIOR,
+            :EST,
+            :INICIO
+    DO
+        SUSPEND;
+END!!
+
+SET TERM ; !!
+
+--GET
+SET TERM !! ;
+
+CREATE PROCEDURE SP_META_GET (
+    P_ID INTEGER
+)
+RETURNS (
+    ID_META INTEGER,
+    USUARIO INTEGER,
+    SUBCAT INTEGER,
+    NOMBRE VARCHAR(150),
+    DESCRI VARCHAR(200),
+    OBJETIVO NUMERIC(10,2),
+    ACUM NUMERIC(10,2),
+    PRIOR VARCHAR(20),
+    EST VARCHAR(20),
+    F_INICIO DATE,
+    F_OBJ DATE
+)
+AS
+BEGIN
+    SELECT
+        ID_META,
+        ID_USUARIO,
+        ID_SUBCATEGORIA,
+        NOMBRE_META,
+        DESCRIPCION,
+        MONTO_OBJETIVO,
+        MONTO_ACUMULADO,
+        PRIORIDAD,
+        ESTADO,
+        FECHA_INICIO,
+        FECHA_OBJETIVO
+    FROM META_AHORRO
+    WHERE ID_META = :P_ID
+    INTO
+        :ID_META,
+        :USUARIO,
+        :SUBCAT,
+        :NOMBRE,
+        :DESCRI,
+        :OBJETIVO,
+        :ACUM,
+        :PRIOR,
+        :EST,
+        :F_INICIO,
+        :F_OBJ;
+
+    SUSPEND;
+END!!
+
+SET TERM ; !!
+
+--UPDATE 
+SET TERM !! ;
+
+CREATE PROCEDURE SP_META_UPDATE (
+    P_ID INTEGER,
+    P_MONTO_ACUM NUMERIC(10,2),
+    P_PRIORIDAD VARCHAR(20),
+    P_ESTADO VARCHAR(20),
+    P_MODIFICADO_POR VARCHAR(100)
+)
+AS
+BEGIN
+    UPDATE META_AHORRO
+    SET
+        MONTO_ACUMULADO = :P_MONTO_ACUM,
+        PRIORIDAD = :P_PRIORIDAD,
+        ESTADO = :P_ESTADO,
+        MODIFICADO_POR = :P_MODIFICADO_POR,
+        MODIFICADO_EN = CURRENT_TIMESTAMP
+    WHERE ID_META = :P_ID;
+END!!
+
+SET TERM ; !!
+
+-- DELETE
+SET TERM !! ;
+
+CREATE PROCEDURE SP_META_DELETE (
+    P_ID INTEGER
+)
+AS
+BEGIN
+    DELETE FROM META_AHORRO
+    WHERE ID_META = :P_ID;
+END!!
+
+SET TERM ; !!
