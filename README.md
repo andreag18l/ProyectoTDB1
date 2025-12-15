@@ -1,1 +1,102 @@
 # ProyectoTDB1
+# INFORME  - PROYECTO TDB1  
+
+## DATOS DEL EQUIPO
+- **Integrante 1:** Andrea García
+- **Integrante 2:** Héctor Carranza
+- **Tecnología Base de Datos:** InterBase
+
+---
+
+## . ARQUITECTURA IMPLEMENTADA
+
+###  Esquema de Base de Datos
+Se diseñó e implementó un modelo entidad-relación compuesto por 8 tablas principales:
+
+1. **USUARIO** - Gestión de usuarios del sistema
+2. **CATEGORÍA** - Clasificación de ingresos y gastos
+3. **SUBCATEGORÍA** - Detalle de categorías principales
+4. **PRESUPUESTO** - Planificación financiera por período
+5. **PRESUPUESTO_DETALLE** - Distribución del presupuesto por subcategoría
+6. **TRANSACCIÓN** - Registro de movimientos financieros
+7. **OBLIGACIÓN_FIJA** - Compromisos financieros recurrentes
+8. **META_AHORRO** - Objetivos de ahorro programados
+
+###  Características Técnicas
+- **Motor:** InterBase 
+- **Secuencias:** Generadores para IDs autoincrementales
+
+---
+
+##  COMPONENTES DESARROLLADOS
+
+###  Procedimientos Almacenados (Stored Procedures)
+Se implementaron 37 procedimientos almacenados organizados por módulo pero solo estan activos 35 
+
+###  Triggers y Reglas de Negocio
+Se configuraron triggers para:
+
+1. **Actualización automática** de montos acumulados en metas de ahorro
+2. **Validación de fechas** en presupuestos (fecha fin > fecha inicio)
+3. **Control de estado** en transacciones relacionadas con presupuestos
+4. **Actualización de timestamps** en modificaciones (MODIFICADO_EN)
+
+---
+
+##  FRONTEND PARCIAL EN PYTHON
+
+###  Módulos Implementados
+- **Módulo de Usuarios:** CRUD completo con interfaz gráfica
+- **Módulo de Categorías:** Gestión de categorías y subcategorías
+- **Módulo de Presupuestos:** Creación y edición de presupuestos
+
+###  Características del Frontend
+- **Librería GUI:** Tkinter para interfaces gráficas
+- **Conexión a BD:** Driver oficial InterBase para Python
+- **Arquitectura:** Patrón MVC (Modelo-Vista-Controlador)
+- **Validaciones:** Validación de datos en cliente y servidor
+
+###  Estado Actual
+El frontend funciona correctamente para los módulos mencionados, con capacidad de:
+- Conectar y autenticar contra la base de datos InterBase
+- Realizar operaciones CRUD completas
+- Manejar transacciones y rollback en errores
+- Mostrar mensajes de confirmación y error
+---
+##  PRUEBAS Y VALIDACIÓN
+
+###  Datos de Prueba
+Se insertaron 150 registros de prueba distribuidos en:
+- 10 usuarios de prueba
+- 15 categorías principales
+- 45 subcategorías
+- 25 presupuestos con sus detalles
+- 30 transacciones realistas
+- 12 obligaciones fijas
+- 8 metas de ahorro
+###  Validaciones Realizadas
+1. **Integridad Referencial:** Todas las FK funcionan correctamente
+2. **Procedimientos Almacenados:** 100% funcionales
+3. **Triggers:** Ejecutan correctamente las reglas de negocio
+4. **Transacciones:** Commit y Rollback funcionan adecuadamente
+5. **Concurrencia:** Manejo básico de múltiples conexiones
+---
+##  LIMITACIONES Y OBSERVACIONES
+
+###  Componentes No Implementados
+1. **Sistema de Reportes:** La generación de reportes gráficos y tabulares quedó pendiente por dificultades con la integración de herramientas externas (Crystal Reports, JasperReports) con InterBase.
+2. **Tabla de Alertas:** Aunque se diseñó la estructura, la implementación de alertas se manejó mediante triggers dentro de la base de datos, por considerarse más eficiente para este proyecto.
+3. **Módulos del Frontend:** Solo se completaron usuarios, categorías y presupuestos. Los módulos de transacciones, obligaciones y metas quedaron en estado de prototipo.
+---
+## . CONCLUSIONES
+
+### Logros Principales
+1. Base de datos completamente funcional y normalizada
+2. Procedimientos almacenados para todas las operaciones CRUD
+3. Implementación correcta de reglas de negocio mediante triggers
+4. Frontend básico operativo para módulos esenciales
+5. Documentación técnica completa del sistema
+
+**ELABORADO POR:**  
+Andrea García  
+Héctor Carranza 
