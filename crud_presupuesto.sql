@@ -201,7 +201,7 @@ END!!
 SET TERM ; !!
 
 
--- delete 
+/*-- delete 
 SET TERM !! ;
 
 CREATE PROCEDURE SP_PRESUPUESTO_DELETE (
@@ -213,4 +213,4 @@ BEGIN
     WHERE ID_PRESUPUESTO = :P_ID;
 END!!
 
-SET TERM ; !!
+SET TERM ; !!*/
