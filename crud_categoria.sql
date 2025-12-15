@@ -175,4 +175,4 @@ END^
 SET TERM ; ^
 
 CREATE EXCEPTION EX_CATEGORIA_CON_SUBCATEGORIAS
-'No se puede eliminar la categoria porque tiene subcategorias asociadas';
+'Eliminación bloqueada. Hay subcategorías vinculadas.';
