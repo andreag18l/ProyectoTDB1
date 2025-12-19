@@ -97,7 +97,7 @@ class MetasAhorroPage(QWidget):
         # Botones
         btn_guardar = QPushButton("Guardar"); btn_guardar.setStyleSheet(BTN_GRAY); btn_guardar.clicked.connect(self.guardar_meta)
         btn_limpiar = QPushButton("Limpiar"); btn_limpiar.setStyleSheet(BTN_GRAY); btn_limpiar.clicked.connect(self.limpiar_form)
-        btn_atras = QPushButton("Atrás"); btn_atras.setStyleSheet(BTN_GRAY); btn_atras.clicked.connect(lambda: self.app_window.show_page("menu"))
+        btn_atras = QPushButton("Atrás"); btn_atras.setStyleSheet(BTN_GRAY); btn_atras.clicked.connect(lambda: self.app_window.show_page("dashboard"))
 
         h_buttons = QHBoxLayout()
         h_buttons.addWidget(btn_atras)
