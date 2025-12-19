@@ -1,247 +1,147 @@
-# transacciones_page.py
 from PyQt6.QtWidgets import (
-    QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFormLayout, QMessageBox, QTableWidget, QTableWidgetItem, QComboBox,
-    QSpinBox, QHeaderView, QGroupBox, QDateEdit
+    QWidget, QComboBox, QDateEdit, QLabel, QLineEdit, QPushButton,
+    QVBoxLayout, QHBoxLayout, QFormLayout,
+    QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, QDate
-from datetime import datetime
+from datetime import date
+
+from transacciones_service import crear_transaccion, listar_transacciones
+from presupuesto_service import listar_presupuestos
 
 BTN_GRAY = """
-    QPushButton {
-        background-color: #f0f0f0;
-        border: 1px solid #d0d0d0;
-        border-radius: 8px;
-        padding: 8px 10px;
-        font-size: 14px;
-        color: #222222;
-    }
-    QPushButton:hover {
-        background-color: #e6e6e6;
-    }
-"""
-
-BTN_DANGER = """
-    QPushButton {
-        background-color: #b91c1c;
-        color: white;
-        border-radius: 8px;
-        padding: 8px 10px;
-        font-size: 14px;
-    }
-    QPushButton:hover {
-        background-color: #991616;
-    }
+QPushButton {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    padding: 8px;
+}
 """
 
 INPUT_STYLE = """
-    QLineEdit, QComboBox, QSpinBox, QDateEdit {
-        padding: 6px;
-        border-radius: 6px;
-        border: 1px solid #cfcfcf;
-        font-size: 14px;
-    }
+QLineEdit,QComboBox,QDateEdit{
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #cfcfcf;
+}
 """
-
-WINDOW_BG = "background-color: #ffffff; color: #222222; font-family: Arial;"
-TITLE_STYLE = "font-size: 20px; font-weight: bold; color: #2b2b2b;"
-
-# Lista de transacciones (temporal, luego DB)
-transacciones = []
 
 class TransaccionesPage(QWidget):
     def __init__(self, app_window):
         super().__init__()
         self.app_window = app_window
-        self.setStyleSheet(WINDOW_BG)
-        self.editing_id = None
-
-        # ------------------------------
         # Título
-        # ------------------------------
         title = QLabel("Gestión de Transacciones")
-        title.setStyleSheet(TITLE_STYLE)
         title.setFont(QFont("Arial", 18))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # ------------------------------
         # Formulario
-        # ------------------------------
-        form_group = QGroupBox("Crear / Editar Transacción")
-        form_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-        form_layout = QFormLayout()
+        form = QFormLayout()
+        self.descripcion = QLineEdit(); self.descripcion.setStyleSheet(INPUT_STYLE)
+        self.monto = QLineEdit(); self.monto.setStyleSheet(INPUT_STYLE)
+        self.tipo = QComboBox(); self.tipo.addItems(["INGRESO", "GASTO", "AHORRO"]); self.tipo.setStyleSheet(INPUT_STYLE)
+        self.fecha = QDateEdit(); self.fecha.setDate(QDate.currentDate()); self.fecha.setCalendarPopup(True); self.fecha.setStyleSheet(INPUT_STYLE)
+        self.ano = QLineEdit(); self.ano.setStyleSheet(INPUT_STYLE)
+        self.mes = QLineEdit(); self.mes.setStyleSheet(INPUT_STYLE)
+        self.presupuesto = QComboBox(); self.presupuesto.setStyleSheet(INPUT_STYLE)
 
-        self.date_edit = QDateEdit()
-        self.date_edit.setDate(QDate.currentDate())
-        self.date_edit.setDisplayFormat("dd/MM/yyyy")
-        self.date_edit.setStyleSheet(INPUT_STYLE)
-
-        self.input_concepto = QLineEdit()
-        self.input_concepto.setFixedWidth(320)
-        self.input_concepto.setStyleSheet(INPUT_STYLE)
-
-        self.combo_categoria = QComboBox()
-        self.combo_categoria.addItems(["Ingreso", "Gasto", "Ahorro"])
-        self.combo_categoria.setFixedWidth(200)
-
-        self.input_monto = QLineEdit()
-        self.input_monto.setFixedWidth(200)
-        self.input_monto.setStyleSheet(INPUT_STYLE)
-        self.input_monto.setPlaceholderText("0.00")
-
-        form_layout.addRow("Fecha:", self.date_edit)
-        form_layout.addRow("Concepto:", self.input_concepto)
-        form_layout.addRow("Categoría:", self.combo_categoria)
-        form_layout.addRow("Monto:", self.input_monto)
+        form.addRow("Descripción:", self.descripcion)
+        form.addRow("Monto:", self.monto)
+        form.addRow("Tipo:", self.tipo)
+        form.addRow("Fecha real:", self.fecha)
+        form.addRow("Año imputación:", self.ano)
+        form.addRow("Mes imputación:", self.mes)
+        form.addRow("Presupuesto:", self.presupuesto)
 
         # Botones
-        btn_guardar = QPushButton("Guardar"); btn_guardar.setStyleSheet(BTN_GRAY); btn_guardar.clicked.connect(self.guardar_transaccion)
-        btn_limpiar = QPushButton("Limpiar"); btn_limpiar.setStyleSheet(BTN_GRAY); btn_limpiar.clicked.connect(self.limpiar_form)
-        btn_atras = QPushButton("Atrás"); btn_atras.setStyleSheet(BTN_GRAY); btn_atras.clicked.connect(lambda: self.app_window.show_page("menu"))
+        btn_guardar = QPushButton("Guardar")
+        btn_guardar.setStyleSheet(BTN_GRAY)
+        btn_guardar.clicked.connect(self.guardar)
 
-        h_buttons = QHBoxLayout()
-        h_buttons.addWidget(btn_atras)
-        h_buttons.addWidget(btn_limpiar)
-        h_buttons.addWidget(btn_guardar)
+        btn_atras = QPushButton("Atrás")
+        btn_atras.setStyleSheet(BTN_GRAY)
+        btn_atras.clicked.connect(lambda: self.app_window.show_page("dashboard"))
 
-        form_layout.addRow(h_buttons)
-        form_group.setLayout(form_layout)
+        h = QHBoxLayout()
+        h.addWidget(btn_atras)
+        h.addWidget(btn_guardar)
+        form.addRow(h)
 
-        # ------------------------------
         # Tabla
-        # ------------------------------
-        self.table = QTableWidget(0, 6)
-        self.table.setHorizontalHeaderLabels(["ID","Fecha","Concepto","Categoría","Monto","Acciones"])
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["ID", "Descripción", "Monto", "Fecha", "Tipo"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setColumnHidden(0, True)
-        self.table.setEditTriggers(self.table.EditTrigger.NoEditTriggers)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-        # ------------------------------
-        # Layout global
-        # ------------------------------
+        # Layout principal
         layout = QVBoxLayout()
         layout.addWidget(title)
-        layout.addWidget(form_group)
-        layout.addWidget(QLabel("Lista de Transacciones:"))
+        layout.addLayout(form)
         layout.addWidget(self.table)
         self.setLayout(layout)
 
-        self.actualizar_tabla()
+        # Cargar presupuestos y transacciones
+        self.cargar_presupuestos()
+        self.cargar()
 
-    # =====================================================
-    # Validación
-    # =====================================================
-    def validar_form(self):
-        if not self.input_concepto.text().strip():
-            QMessageBox.warning(self, "Validación", "Debes ingresar un concepto.")
-            return False
+    def cargar_presupuestos(self):
+        """Carga todos los presupuestos en el ComboBox"""
+        self.presupuesto.clear()
+        for p in listar_presupuestos():  # sin filtrar por usuario, igual que antes
+            self.presupuesto.addItem(f"{p[2]} (ID:{p[0]})", p[0])
+
+    def guardar(self):
         try:
-            monto = float(self.input_monto.text() or "0")
-            if monto <= 0:
-                raise ValueError
-        except:
-            QMessageBox.warning(self, "Validación", "Monto inválido o <= 0.")
-            return False
-        return True
+            if not hasattr(self.app_window, "usuario_activo") or not self.app_window.usuario_activo:
+                QMessageBox.warning(self, "Error", "No hay usuario activo.")
+                return
 
-    # =====================================================
-    # Guardar transacción
-    # =====================================================
-    def guardar_transaccion(self):
-        if not self.validar_form():
-            return
+            id_usuario = self.app_window.usuario_activo[0]  # toma el usuario activo
+            id_presupuesto = self.presupuesto.currentData()
+            ano = int(self.ano.text())
+            mes = int(self.mes.text())
 
-        fecha = self.date_edit.date().toPyDate()
-        concepto = self.input_concepto.text().strip()
-        categoria = self.combo_categoria.currentText()
-        monto = float(self.input_monto.text())
+            # Por ahora subcategoría fija porque aún no hay subcategorías
+            crear_transaccion(
+                id_usuario=id_usuario,
+                id_presupuesto=id_presupuesto,
+                id_subcategoria=3,
+                id_obligacion=None,
+                tipo=self.tipo.currentText(),
+                ano=ano,
+                mes=mes,
+                descripcion=self.descripcion.text(),
+                monto=float(self.monto.text()),
+                fecha=self.fecha.date().toPyDate(),
+                metodo_pago="Efectivo",
+                num_factura="",
+                observaciones="",
+                creado_por="frontend"
+            )
 
-        global transacciones
-        if self.editing_id is None:
-            nuevo = {
-                "id": str(int(datetime.now().timestamp()*1000)),
-                "fecha": fecha,
-                "concepto": concepto,
-                "categoria": categoria,
-                "monto": monto
-            }
-            transacciones.append(nuevo)
-            QMessageBox.information(self, "Transacción", "Transacción creada.")
-        else:
-            for t in transacciones:
-                if t["id"] == self.editing_id:
-                    t.update({
-                        "fecha": fecha,
-                        "concepto": concepto,
-                        "categoria": categoria,
-                        "monto": monto
-                    })
-            QMessageBox.information(self, "Transacción", "Transacción actualizada.")
-            self.editing_id = None
+            QMessageBox.information(self, "OK", "Transacción creada correctamente.")
+            self.cargar()
 
-        self.limpiar_form()
-        self.actualizar_tabla()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudo crear la transacción:\n{e}")
 
-    # =====================================================
-    # Limpiar formulario
-    # =====================================================
-    def limpiar_form(self):
-        self.input_concepto.clear()
-        self.input_monto.clear()
-        self.date_edit.setDate(QDate.currentDate())
-        self.combo_categoria.setCurrentIndex(0)
-        self.editing_id = None
-
-    # =====================================================
-    # Tabla
-    # =====================================================
-    def actualizar_tabla(self):
+    def cargar(self):
+        """Carga las transacciones en la tabla"""
         self.table.setRowCount(0)
-        for t in transacciones:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(t["id"]))
-            self.table.setItem(row, 1, QTableWidgetItem(t["fecha"].strftime("%d/%m/%Y")))
-            self.table.setItem(row, 2, QTableWidgetItem(t["concepto"]))
-            self.table.setItem(row, 3, QTableWidgetItem(t["categoria"]))
-            self.table.setItem(row, 4, QTableWidgetItem(f"{t['monto']:.2f}"))
+        try:
+            if not hasattr(self.app_window, "usuario_activo") or not self.app_window.usuario_activo:
+                return
 
-            # botones editar/eliminar
-            btn_edit = QPushButton("Editar"); btn_edit.setStyleSheet(BTN_GRAY)
-            btn_del = QPushButton("Eliminar"); btn_del.setStyleSheet(BTN_DANGER)
-            btn_edit.clicked.connect(lambda checked, tid=t["id"]: self.cargar_edicion(tid))
-            btn_del.clicked.connect(lambda checked, tid=t["id"]: self.eliminar(tid))
+            id_usuario = self.app_window.usuario_activo[0]
+            for t in listar_transacciones(id_usuario):
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+                # indices según SP_TRANSACCION_LIST: ID_TRANS, SUBCAT, PRES, TIPO, MONTO, FECHA, DESCRI
+                self.table.setItem(row, 0, QTableWidgetItem(str(t[0])))  # ID_TRANS
+                self.table.setItem(row, 1, QTableWidgetItem(t[6]))       # DESCRIPCION
+                self.table.setItem(row, 2, QTableWidgetItem(str(t[4])))  # MONTO
+                self.table.setItem(row, 3, QTableWidgetItem(str(t[5])))  # FECHA
+                self.table.setItem(row, 4, QTableWidgetItem(t[3]))       # TIPO
 
-            cont = QWidget()
-            hl = QHBoxLayout()
-            hl.setContentsMargins(0,0,0,0)
-            hl.addWidget(btn_edit)
-            hl.addWidget(btn_del)
-            cont.setLayout(hl)
-            self.table.setCellWidget(row, 5, cont)
-
-    # =====================================================
-    # Editar
-    # =====================================================
-    def cargar_edicion(self, tid):
-        for t in transacciones:
-            if t["id"] == tid:
-                self.editing_id = tid
-                self.date_edit.setDate(QDate(t["fecha"].year, t["fecha"].month, t["fecha"].day))
-                self.input_concepto.setText(t["concepto"])
-                self.combo_categoria.setCurrentText(t["categoria"])
-                self.input_monto.setText(str(t["monto"]))
-                break
-
-    # =====================================================
-    # Eliminar
-    # =====================================================
-    def eliminar(self, tid):
-        global transacciones
-        r = QMessageBox.question(self, "Eliminar", "¿Eliminar esta transacción?",
-                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        if r == QMessageBox.StandardButton.Yes:
-            transacciones = [t for t in transacciones if t["id"] != tid]
-            self.actualizar_tabla()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar las transacciones:\n{e}")

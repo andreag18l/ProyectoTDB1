@@ -1,24 +1,29 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton,
-    QVBoxLayout, QHBoxLayout, QFormLayout, QMessageBox,
-    QStackedWidget, QScrollArea
+    QVBoxLayout, QFormLayout, QMessageBox,
+    QStackedWidget
 )
-from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
 import sys
 
-# IMPORTANTE: conexión real a BD
-from usuarios_service import crear_usuario
-from usuarios_service import listar_usuarios  # solo para login simple
+# ------------------------------
+# SERVICIOS
+# ------------------------------
+from usuarios_service import crear_usuario, listar_usuarios
 
+# ------------------------------
+# PÁGINAS
+# ------------------------------
 from presupuesto_page import PresupuestoPage
 from categorias_page import CategoriasPage
 from transacciones_page import TransaccionesPage
 from metas_ahorro_page import MetasAhorroPage
+from reportes_page import ReportesPage
+from dashboard_page import DashboardPage
 
 
 # ------------------------------
-# Estilos
+# ESTILOS
 # ------------------------------
 BTN_GRAY = """
 QPushButton {
@@ -47,17 +52,18 @@ QLineEdit {
 }
 """
 
-WINDOW_BG = "background-color: white;"
 TITLE_STYLE = "font-size: 20px; font-weight: bold;"
 
 
-# ------------------------------
-# PÁGINAS
-# ------------------------------
+# ======================================================
+# PÁGINAS DE AUTENTICACIÓN
+# ======================================================
+
 class InicioPage(QWidget):
     def __init__(self, app):
         super().__init__()
         self.app = app
+        self.usuario_activo = None
 
         title = QLabel("Finanzas Personales")
         title.setStyleSheet(TITLE_STYLE)
@@ -71,11 +77,11 @@ class InicioPage(QWidget):
         btn_login.setStyleSheet(BTN_GRAY)
         btn_login.clicked.connect(lambda: app.show_page("login"))
 
-        v = QVBoxLayout()
-        v.addWidget(title)
-        v.addWidget(btn_registro)
-        v.addWidget(btn_login)
-        self.setLayout(v)
+        layout = QVBoxLayout()
+        layout.addWidget(title)
+        layout.addWidget(btn_registro)
+        layout.addWidget(btn_login)
+        self.setLayout(layout)
 
 
 class RegistroPage(QWidget):
@@ -104,10 +110,10 @@ class RegistroPage(QWidget):
         btn.setStyleSheet(BTN_GRAY)
         btn.clicked.connect(self.registrar)
 
-        v = QVBoxLayout()
-        v.addLayout(form)
-        v.addWidget(btn)
-        self.setLayout(v)
+        layout = QVBoxLayout()
+        layout.addLayout(form)
+        layout.addWidget(btn)
+        self.setLayout(layout)
 
     def registrar(self):
         try:
@@ -119,7 +125,7 @@ class RegistroPage(QWidget):
                 "ACTIVO",
                 "frontend"
             )
-            QMessageBox.information(self, "OK", "Usuario registrado en la BD")
+            QMessageBox.information(self, "OK", "Usuario registrado correctamente")
             self.app.show_page("login")
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
@@ -141,66 +147,48 @@ class LoginPage(QWidget):
         btn.setStyleSheet(BTN_GRAY)
         btn.clicked.connect(self.login)
 
-        v = QVBoxLayout()
-        v.addWidget(QLabel("Correo"))
-        v.addWidget(self.correo)
-        v.addWidget(QLabel("Contraseña"))
-        v.addWidget(self.password)
-        v.addWidget(btn)
-        self.setLayout(v)
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Correo"))
+        layout.addWidget(self.correo)
+        layout.addWidget(QLabel("Contraseña"))
+        layout.addWidget(self.password)
+        layout.addWidget(btn)
+        self.setLayout(layout)
 
     def login(self):
-        usuarios = listar_usuarios()
-        for u in usuarios:
-            if u[3] == self.correo.text():
-                self.app.show_page("menu")
-                return
-        QMessageBox.critical(self, "Error", "Usuario no encontrado")
+     usuarios = listar_usuarios()
+     for u in usuarios:
+        if u[3] == self.correo.text():  # columna 3 = correo
+            self.app.usuario_activo = u    
+            self.app.show_page("dashboard")
+            return
+     QMessageBox.critical(self, "Error", "Usuario no encontrado")
 
 
-class MenuPage(QWidget):
-    def __init__(self, app):
-        super().__init__()
-        self.app = app
 
-        v = QVBoxLayout()
-        for op in ["Presupuesto", "Transacciones", "Categorías", "Metas", "Reportes"]:
-            b = QPushButton(op)
-            b.setStyleSheet(BTN_GRAY)
-            b.clicked.connect(lambda _, o=op: app.show_page(o.lower()))
-            v.addWidget(b)
+# ======================================================
+# APP PRINCIPAL
+# ======================================================
 
-        btn_logout = QPushButton("Cerrar Sesión")
-        btn_logout.setStyleSheet(BTN_DANGER)
-        btn_logout.clicked.connect(lambda: app.show_page("inicio"))
-        v.addWidget(btn_logout)
-
-        self.setLayout(v)
-
-
-# ------------------------------
-# APP
-# ------------------------------
 class AppWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sistema de Presupuesto")
-        self.stack = QStackedWidget()
-
+        self.stack = QStackedWidget() 
         self.pages = {
             "inicio": InicioPage(self),
             "registro": RegistroPage(self),
             "login": LoginPage(self),
-            "menu": MenuPage(self),
+            "dashboard": DashboardPage(self),
             "presupuesto": PresupuestoPage(self),
             "transacciones": TransaccionesPage(self),
             "categorías": CategoriasPage(self),
             "metas": MetasAhorroPage(self),
-            "reportes": QWidget(),
+            "reportes": ReportesPage(self),
         }
 
-        for p in self.pages.values():
-            self.stack.addWidget(p)
+        for page in self.pages.values():
+            self.stack.addWidget(page)
 
         layout = QVBoxLayout()
         layout.addWidget(self.stack)
@@ -211,6 +199,10 @@ class AppWindow(QWidget):
     def show_page(self, key):
         self.stack.setCurrentWidget(self.pages[key])
 
+
+# ======================================================
+# MAIN
+# ======================================================
 
 def main():
     app = QApplication(sys.argv)

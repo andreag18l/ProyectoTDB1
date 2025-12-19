@@ -8,7 +8,6 @@ from PyQt6.QtCore import Qt
 
 from presupuesto_service import crear_presupuesto, listar_presupuestos
 
-
 BTN_GRAY = """
 QPushButton {
     background-color: #f0f0f0;
@@ -34,8 +33,8 @@ class PresupuestoPage(QWidget):
         title.setFont(QFont("Arial", 18))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Formulario
         form = QFormLayout()
-
         self.nombre = QLineEdit(); self.nombre.setStyleSheet(INPUT_STYLE)
         self.ano_i = QLineEdit(); self.ano_i.setStyleSheet(INPUT_STYLE)
         self.mes_i = QLineEdit(); self.mes_i.setStyleSheet(INPUT_STYLE)
@@ -54,57 +53,69 @@ class PresupuestoPage(QWidget):
         form.addRow("Gastos:", self.gastos)
         form.addRow("Ahorro:", self.ahorro)
 
+        # Botones
         btn_guardar = QPushButton("Guardar")
         btn_guardar.setStyleSheet(BTN_GRAY)
         btn_guardar.clicked.connect(self.guardar)
 
         btn_atras = QPushButton("Atrás")
         btn_atras.setStyleSheet(BTN_GRAY)
-        btn_atras.clicked.connect(lambda: self.app_window.show_page("menu"))
+        btn_atras.clicked.connect(lambda: self.app_window.show_page("dashboard"))
 
         h = QHBoxLayout()
         h.addWidget(btn_atras)
         h.addWidget(btn_guardar)
         form.addRow(h)
 
+        # Tabla
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(["ID", "Nombre", "Periodo", "Totales"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
+        # Layout principal
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addLayout(form)
         layout.addWidget(self.table)
         self.setLayout(layout)
 
+        # Cargar datos iniciales
         self.cargar()
 
     def guardar(self):
-        crear_presupuesto(
-            1,
-            self.nombre.text(),
-            int(self.ano_i.text()),
-            int(self.mes_i.text()),
-            int(self.ano_f.text()),
-            int(self.mes_f.text()),
-            float(self.ingresos.text()),
-            float(self.gastos.text()),
-            float(self.ahorro.text()),
-            "frontend"
-        )
+         try:
+           id_usuario = self.app_window.usuario_activo[0]  # columna 0 = ID_USUARIO
+           crear_presupuesto(
+               id_usuario,
+               self.nombre.text(),
+               int(self.ano_i.text()),
+               int(self.mes_i.text()),
+               int(self.ano_f.text()),
+               int(self.mes_f.text()),
+               float(self.ingresos.text()),
+               float(self.gastos.text()),
+               float(self.ahorro.text()),
+               "ACTIVO",
+                "frontend"
+           )
+           QMessageBox.information(self, "OK", "Presupuesto creado correctamente.")
+           self.cargar()
+         except Exception as e:
+           QMessageBox.critical(self, "Error", f"No se pudo crear el presupuesto:\n{e}")
 
-        QMessageBox.information(self, "OK", "Presupuesto creado.")
-        self.cargar()
 
     def cargar(self):
         self.table.setRowCount(0)
-        for p in listar_presupuestos():
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(str(p[0])))
-            self.table.setItem(row, 1, QTableWidgetItem(p[1]))
-            self.table.setItem(row, 2, QTableWidgetItem(f"{p[2]}/{p[3]} - {p[4]}/{p[5]}"))
-            self.table.setItem(row, 3, QTableWidgetItem(
-                f"I:{p[6]} G:{p[7]} A:{p[8]}"
-            ))
+        try:
+            for p in listar_presupuestos():
+                row = self.table.rowCount()
+                self.table.insertRow(row)
+                self.table.setItem(row, 0, QTableWidgetItem(str(p[0])))  # ID
+                self.table.setItem(row, 1, QTableWidgetItem(p[2]))       # Nombre
+                self.table.setItem(row, 2, QTableWidgetItem(f"{p[3]}/{p[4]} - {p[5]}/{p[6]}"))  # Periodo
+                self.table.setItem(row, 3, QTableWidgetItem(
+                    f"I:{p[7]} G:{p[8]} A:{p[9]}"  # Totales ingresos/gastos/ahorro
+                ))
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"No se pudieron cargar los presupuestos:\n{e}")

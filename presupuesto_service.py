@@ -1,38 +1,81 @@
 from db import get_conn
 
-# -----------------------------------------
-# Crear presupuesto
-# -----------------------------------------
-def crear_presupuesto(
-    id_usuario,
-    nombre_presupuesto,
-    ano_inicio,
-    mes_inicio,
-    ano_fin,
-    mes_fin,
-    total_ingresos,
-    total_gastos,
-    total_ahorro,
-    creado_por
-):
+def crear_presupuesto(id_usuario, nombre, ano_inicio, mes_inicio, ano_fin, mes_fin,
+                      ingresos, gastos, ahorro, estado, creado_por):
     con = get_conn()
     cur = con.cursor()
 
     cur.execute("""
         EXECUTE PROCEDURE SP_PRESUPUESTO_INSERT(
-            ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
     """, (
         id_usuario,
-        nombre_presupuesto,
+        nombre,
         ano_inicio,
         mes_inicio,
         ano_fin,
         mes_fin,
-        total_ingresos,
-        total_gastos,
-        total_ahorro,
+        ingresos,
+        gastos,
+        ahorro,
+        estado,
         creado_por
+    ))
+
+    id_generado = cur.fetchone()[0]
+    con.commit()
+    cur.close()
+    con.close()
+    return id_generado
+
+
+def listar_presupuestos():
+    con = get_conn()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM SP_PRESUPUESTO_LIST
+        ORDER BY ID_PRES
+    """)
+
+    filas = cur.fetchall()
+    cur.close()
+    con.close()
+    return filas
+
+
+def obtener_presupuesto_por_id(id_presupuesto):
+    con = get_conn()
+    cur = con.cursor()
+
+    cur.execute("""
+        SELECT *
+        FROM SP_PRESUPUESTO_GET(?)
+    """, (id_presupuesto,))
+
+    fila = cur.fetchone()
+    cur.close()
+    con.close()
+    return fila
+
+
+def actualizar_presupuesto(id_presupuesto, ingresos, gastos, ahorro, estado, modificado_por):
+    con = get_conn()
+    cur = con.cursor()
+
+    cur.execute("""
+        EXECUTE PROCEDURE SP_PRESUPUESTO_UPDATE(
+            ?, ?, ?, ?, ?, ?
+        )
+    """, (
+        id_presupuesto,
+        ingresos,
+        gastos,
+        ahorro,
+        estado,
+        modificado_por
     ))
 
     con.commit()
@@ -40,31 +83,14 @@ def crear_presupuesto(
     con.close()
 
 
-# -----------------------------------------
-# Listar presupuestos
-# -----------------------------------------
-def listar_presupuestos():
+def eliminar_presupuesto(id_presupuesto):
     con = get_conn()
     cur = con.cursor()
 
     cur.execute("""
-        SELECT
-            ID_PRESUPUESTO,
-            NOMBRE_PRESUPUESTO,
-            ANO_INICIO,
-            MES_INICIO,
-            ANO_FIN,
-            MES_FIN,
-            TOTAL_INGRESOS_PLANIFICADOS,
-            TOTAL_GASTOS_PLANIFICADOS,
-            TOTAL_AHORRO_PLANIFICADO,
-            ESTADO
-        FROM PRESUPUESTO
-        ORDER BY CREADO_EN DESC
-    """)
+        EXECUTE PROCEDURE SP_PRESUPUESTO_DELETE(?)
+    """, (id_presupuesto,))
 
-    filas = cur.fetchall()
+    con.commit()
     cur.close()
     con.close()
-
-    return filas
